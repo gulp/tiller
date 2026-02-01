@@ -220,20 +220,20 @@ Each tag type creates natural boundaries:
 ```mermaid
 stateDiagram-v2
     [*] --> NOT_INITIALIZED
-    NOT_INITIALIZED --> ROADMAP_CREATED: /gsd:new-project + create-roadmap
+    NOT_INITIALIZED --> ROADMAP_CREATED: gsd new-project + create-roadmap
 
     ROADMAP_CREATED --> PHASE_READY_TO_PLAN
 
     state PhaseLifecycle {
-        PHASE_READY_TO_PLAN --> PHASE_PLANNED: /gsd:plan-phase
-        PHASE_PLANNED --> PHASE_EXECUTING: /gsd:execute-phase
+        PHASE_READY_TO_PLAN --> PHASE_PLANNED: gsd plan-phase
+        PHASE_PLANNED --> PHASE_EXECUTING: gsd execute-phase
         PHASE_EXECUTING --> PHASE_COMPLETE: All SUMMARYs
     }
 
     PHASE_COMPLETE --> PHASE_READY_TO_PLAN: Next phase
     PHASE_COMPLETE --> MILESTONE_COMPLETE: Last phase
 
-    MILESTONE_COMPLETE --> PHASE_READY_TO_PLAN: /gsd:new-milestone
+    MILESTONE_COMPLETE --> PHASE_READY_TO_PLAN: gsd new-milestone
     MILESTONE_COMPLETE --> [*]: Project archive
 ```
 
