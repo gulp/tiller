@@ -1,0 +1,66 @@
+{
+  "name": "@gulp/tiller",
+  "version": "0.1.0",
+  "description": "Multi-session workflow automation for Claude Code",
+  "type": "module",
+  "bin": {
+    "tiller": "./dist/tiller/index.js",
+    "ahoy": "./dist/ahoy/index.js"
+  },
+  "scripts": {
+    "build": "tsc && cp -r src/tiller/templates dist/tiller/ && cp -r src/ahoy/templates dist/ahoy/",
+    "tiller": "tsx src/tiller/index.ts",
+    "ahoy": "tsx src/ahoy/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/ tests/",
+    "lint:fix": "biome check --write src/ tests/",
+    "lint:file": "biome check",
+    "test": "vitest run",
+    "test:smoke": "bats tests/smoke/",
+    "test:e2e": "vitest run tests/e2e/",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "claude",
+    "workflow",
+    "tiller",
+    "planning",
+    "automation",
+    "state-machine"
+  ],
+  "author": "gulp",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gulp/tiller"
+  },
+  "homepage": "https://github.com/gulp/tiller#readme",
+  "bugs": {
+    "url": "https://github.com/gulp/tiller/issues"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.11",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.19.6",
+    "cli-testing-library": "^3.0.1",
+    "memfs": "^4.52.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "@toon-format/toon": "^2.1.0",
+    "commander": "^13.0.0",
+    "glob": "^13.0.0",
+    "js-yaml": "^4.1.1",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

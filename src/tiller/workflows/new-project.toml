@@ -1,0 +1,348 @@
+# New Project Workflow
+# Extracted from .claude/get-shit-done/workflows/create-roadmap.md
+
+name = "new-project"
+version = "1.0.0"
+description = "Initialize new project with PROJECT.md, ROADMAP.md, and STATE.md"
+
+initial_step = "check_brief"
+terminal_steps = ["complete"]
+
+# =============================================================================
+# Step: check_brief
+# =============================================================================
+[steps.check_brief]
+name = "Check for Existing Brief"
+description = """
+Check if .planning/PROJECT.md already exists.
+
+```bash
+cat .planning/PROJECT.md 2>/dev/null || echo "No brief found"
+```
+
+**If no brief exists:**
+Ask: "No brief found. Want to create one first, or proceed with roadmap?"
+
+If proceeding without brief, gather quick context:
+- What are we building?
+- What's the rough scope?
+"""
+outputs = ["has_brief", "proceed_without_brief"]
+
+[[steps.check_brief.next]]
+target = "detect_domain"
+condition = "exists(has_brief)"
+label = "Brief exists, continue"
+
+[[steps.check_brief.next]]
+target = "gather_quick_context"
+condition = "eq(proceed_without_brief, true)"
+label = "Proceeding without brief"
+
+[[steps.check_brief.next]]
+target = "complete"
+condition = "eq(proceed_without_brief, false)"
+label = "User wants to create brief first"
+
+# =============================================================================
+# Step: gather_quick_context
+# =============================================================================
+[steps.gather_quick_context]
+name = "Gather Quick Context"
+description = """
+Brief not found, gather essential info:
+- What are we building?
+- What's the rough scope?
+
+Store answers as project_goal and project_scope.
+"""
+outputs = ["project_goal", "project_scope"]
+
+[[steps.gather_quick_context.next]]
+target = "detect_domain"
+
+# =============================================================================
+# Step: detect_domain
+# =============================================================================
+[steps.detect_domain]
+name = "Detect Domain Expertise"
+description = """
+Scan for available domain expertise:
+
+```bash
+ls ./.claude/skills/expertise/ 2>/dev/null
+```
+
+Based on the brief/user request, infer applicable domains:
+- macOS → expertise/macos-apps
+- iOS → expertise/iphone-apps
+- Unity/game → expertise/unity-games
+- MIDI/music → expertise/midi
+- ISF/shader → expertise/isf-shaders
+- UI/design → expertise/ui-design
+- Agent SDK → expertise/with-agent-sdk
+
+Prompt user to confirm detected domains or select from available.
+"""
+outputs = ["selected_domains"]
+
+[[steps.detect_domain.next]]
+target = "identify_phases"
+
+# =============================================================================
+# Step: identify_phases
+# =============================================================================
+[steps.identify_phases]
+name = "Identify Phases"
+description = """
+Derive phases from the actual work needed.
+
+Check depth setting (Quick/Standard/Comprehensive).
+
+Key principle: Derive phases from actual work. Depth determines how
+aggressively you combine things, not a target to hit.
+
+Derive phases:
+1. List all distinct systems/features/capabilities required
+2. Group related work into coherent deliverables
+3. Each phase delivers ONE complete, verifiable thing
+4. Order by dependencies
+
+Good phases are:
+- Coherent: Each delivers one complete, verifiable capability
+- Sequential: Later phases build on earlier
+- Independent: Can be verified and committed on its own
+"""
+outputs = ["phases", "phase_count"]
+
+[[steps.identify_phases.next]]
+target = "detect_research_needs"
+
+# =============================================================================
+# Step: detect_research_needs
+# =============================================================================
+[steps.detect_research_needs]
+name = "Detect Research Needs"
+description = """
+For each phase, determine if research is likely needed.
+
+Research triggers:
+- External API integration
+- Authentication/auth patterns
+- Payment/billing integration
+- Database selection
+- Real-time/websocket
+- AI/LLM integration
+- Any new technology
+
+Assign for each phase:
+- Research: Likely ([reason]) + Research topics: [what]
+- Research: Unlikely ([reason])
+
+Present research assessment for user confirmation.
+"""
+outputs = ["research_assessments"]
+
+[[steps.detect_research_needs.next]]
+target = "confirm_phases"
+
+# =============================================================================
+# Step: confirm_phases
+# =============================================================================
+[steps.confirm_phases]
+name = "Confirm Phase Breakdown"
+description = """
+In YOLO mode: Auto-approve and proceed.
+
+In interactive mode: Present the phase breakdown:
+"Here's how I'd break this down:
+1. [Phase name] - [goal]
+2. [Phase name] - [goal]
+...
+Does this feel right? (yes / adjust)"
+
+If "adjust": Ask what to change, revise, present again.
+"""
+outputs = ["phases_confirmed"]
+
+[[steps.confirm_phases.next]]
+target = "decision_gate"
+condition = "eq(phases_confirmed, true)"
+
+[[steps.confirm_phases.next]]
+target = "identify_phases"
+condition = "eq(phases_confirmed, false)"
+label = "Revise phases"
+
+# =============================================================================
+# Step: decision_gate
+# =============================================================================
+[steps.decision_gate]
+name = "Decision Gate"
+description = """
+In YOLO mode: Auto-approve and proceed.
+
+In interactive mode: Use AskUserQuestion:
+- "Ready to create the roadmap, or would you like me to ask more questions?"
+  - "Create roadmap"
+  - "Ask more questions"
+  - "Let me add context"
+
+Loop until "Create roadmap" selected.
+"""
+outputs = ["ready_to_create"]
+
+[[steps.decision_gate.next]]
+target = "create_structure"
+condition = "eq(ready_to_create, true)"
+
+[[steps.decision_gate.next]]
+target = "gather_more_context"
+condition = "eq(ready_to_create, false)"
+label = "Need more info"
+
+# =============================================================================
+# Step: gather_more_context
+# =============================================================================
+[steps.gather_more_context]
+name = "Gather More Context"
+description = """
+User wants to add more information or has questions.
+Gather additional context through conversation.
+"""
+outputs = ["additional_context"]
+
+[[steps.gather_more_context.next]]
+target = "decision_gate"
+label = "Return to decision"
+
+# =============================================================================
+# Step: create_structure
+# =============================================================================
+[steps.create_structure]
+name = "Create Project Structure"
+description = """
+Create the planning directory structure:
+
+```bash
+mkdir -p .planning/phases
+```
+
+Create phase directories for each phase:
+```bash
+mkdir -p .planning/phases/01-{phase-name}
+mkdir -p .planning/phases/02-{phase-name}
+# etc.
+```
+"""
+outputs = ["structure_created"]
+
+[[steps.create_structure.next]]
+target = "write_roadmap"
+
+# =============================================================================
+# Step: write_roadmap
+# =============================================================================
+[steps.write_roadmap]
+name = "Write ROADMAP.md"
+description = """
+Use template from ./.claude/get-shit-done/templates/roadmap.md.
+
+Write to .planning/ROADMAP.md with:
+- Domain Expertise section
+- Phase list with names and one-line descriptions
+- Dependencies
+- Research flags (Likely/Unlikely with topics)
+- Status tracking (all start as "not started")
+"""
+outputs = ["roadmap_written"]
+
+[[steps.write_roadmap.next]]
+target = "write_state"
+
+# =============================================================================
+# Step: write_state
+# =============================================================================
+[steps.write_state]
+name = "Initialize STATE.md"
+description = """
+Create STATE.md — the project's living memory.
+
+Use template from ./.claude/get-shit-done/templates/state.md.
+
+Write to .planning/STATE.md with:
+- Project Reference pointing to PROJECT.md
+- Current Position (Phase 1, Not started)
+- Performance Metrics (empty)
+- Accumulated Context (empty)
+- Session Continuity (initialized)
+"""
+outputs = ["state_written"]
+
+[[steps.write_state.next]]
+target = "git_commit"
+
+# =============================================================================
+# Step: git_commit
+# =============================================================================
+[steps.git_commit]
+name = "Git Commit Initialization"
+description = """
+Commit project initialization:
+
+```bash
+git add .planning/PROJECT.md .planning/ROADMAP.md .planning/STATE.md
+git add .planning/phases/
+git add .planning/config.json 2>/dev/null
+git commit -m "docs: initialize [project-name] ([N] phases)
+
+[One-liner from PROJECT.md]
+
+Phases:
+1. [phase-name]: [goal]
+2. [phase-name]: [goal]
+..."
+```
+"""
+outputs = ["commit_sha"]
+
+[[steps.git_commit.next]]
+target = "offer_next"
+
+# =============================================================================
+# Step: offer_next
+# =============================================================================
+[steps.offer_next]
+name = "Offer Next Steps"
+description = """
+Present completion summary and next steps:
+
+```
+Project initialized:
+- Brief: .planning/PROJECT.md
+- Roadmap: .planning/ROADMAP.md
+- State: .planning/STATE.md
+
+## ▶ Next Up
+
+**Phase 1: [Name]** — [Goal]
+
+`/gsd:plan-phase 1`
+
+**Also available:**
+- `/gsd:discuss-phase 1`
+- `/gsd:research-phase 1`
+```
+"""
+outputs = ["next_action_suggested"]
+
+[[steps.offer_next.next]]
+target = "complete"
+
+# =============================================================================
+# Step: complete
+# =============================================================================
+[steps.complete]
+name = "Complete"
+description = "Workflow complete. Project has been initialized."
+outputs = []

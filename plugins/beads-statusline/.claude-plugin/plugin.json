@@ -1,0 +1,9 @@
+{
+  "name": "beads-statusline",
+  "version": "0.2.1",
+  "description": "Show current in_progress beads tasks in Claude Code statusline",
+  "author": { "name": "ace-skills" },
+  "license": "MIT",
+  "keywords": ["beads", "statusline", "task-tracking"],
+  "skills": "./skills/"
+}

@@ -1,0 +1,28 @@
+{
+  "name": "tiller",
+  "version": "0.2.0",
+  "description": "Intent state tracking for multi-session work",
+  "keywords": ["workflow", "tracking", "planning", "execution"],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tiller prime"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tiller prime"
+          }
+        ]
+      }
+    ]
+  }
+}

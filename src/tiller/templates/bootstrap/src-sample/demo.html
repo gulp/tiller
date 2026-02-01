@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Mode Demo – Tiller Example</title>
+    <style>
+        /* === Design System: Refined Editorial === */
+
+        :root {
+            /* Light theme */
+            --color-bg: #fdfbf7;
+            --color-surface: #ffffff;
+            --color-text: #1a1815;
+            --color-text-muted: #5c5954;
+            --color-accent: #2563eb;
+            --color-accent-hover: #1d4ed8;
+            --color-border: #e8e5df;
+            --color-code-bg: #f5f3ed;
+
+            /* Spacing & Layout */
+            --space-unit: 1rem;
+            --max-width: 720px;
+            --border-radius: 8px;
+
+            /* Typography */
+            --font-serif: Georgia, 'Times New Roman', serif;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+        }
+
+        [data-theme="dark"] {
+            --color-bg: #0f1419;
+            --color-surface: #1a1f27;
+            --color-text: #e4e1db;
+            --color-text-muted: #9a9590;
+            --color-accent: #5b9dff;
+            --color-accent-hover: #7db3ff;
+            --color-border: #2a3038;
+            --color-code-bg: #151a21;
+        }
+
+        /* === Base Styles === */
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            color: var(--color-text);
+            background: var(--color-bg);
+            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                        color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: calc(var(--space-unit) * 3) var(--space-unit);
+        }
+
+        /* === Layout === */
+
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+        }
+
+        /* === Typography === */
+
+        h1, h2, h3 {
+            font-family: var(--font-serif);
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            margin-bottom: calc(var(--space-unit) * 0.75);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: calc(var(--space-unit) * 0.5);
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            margin-top: calc(var(--space-unit) * 2.5);
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            margin-top: calc(var(--space-unit) * 2);
+        }
+
+        p {
+            margin-bottom: calc(var(--space-unit) * 1.5);
+            color: var(--color-text-muted);
+            max-width: 65ch;
+        }
+
+        a {
+            color: var(--color-accent);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: var(--color-accent-hover);
+            text-decoration: underline;
+        }
+
+        strong {
+            color: var(--color-text);
+            font-weight: 600;
+        }
+
+        /* === Header === */
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: calc(var(--space-unit) * 3);
+            padding-bottom: calc(var(--space-unit) * 2);
+            border-bottom: 1px solid var(--color-border);
+            transition: border-color 0.4s ease;
+        }
+
+        .site-title {
+            font-size: 1rem;
+            font-family: var(--font-sans);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--color-text);
+        }
+
+        /* === Theme Toggle === */
+
+        .theme-toggle {
+            position: relative;
+            width: 56px;
+            height: 28px;
+            background: var(--color-surface);
+            border: 1.5px solid var(--color-border);
+            border-radius: 100px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--color-accent);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .theme-toggle::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: var(--color-accent);
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        background-color 0.3s ease;
+        }
+
+        [data-theme="dark"] .theme-toggle::before {
+            transform: translateX(28px);
+            background: var(--color-accent-hover);
+        }
+
+        /* Icons show destination state - what you'll get when you click */
+        .theme-toggle-icon {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            pointer-events: none;
+            color: var(--color-text-muted);
+            transition: opacity 0.2s ease;
+        }
+
+        /* Light mode: show moon (destination = dark mode) */
+        .theme-toggle-icon.sun {
+            left: 8px;
+            opacity: 0; /* Hide sun in light mode */
+        }
+
+        .theme-toggle-icon.moon {
+            right: 8px;
+            opacity: 0.5; /* Show moon (click to go dark) */
+        }
+
+        /* Dark mode: show sun (destination = light mode) */
+        [data-theme="dark"] .theme-toggle-icon.sun {
+            left: 8px;
+            opacity: 0.5; /* Show sun (click to go light) */
+        }
+
+        [data-theme="dark"] .theme-toggle-icon.moon {
+            right: 8px;
+            opacity: 0; /* Hide moon in dark mode */
+        }
+
+        /* === Card Component === */
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            padding: calc(var(--space-unit) * 2);
+            margin: calc(var(--space-unit) * 2) 0;
+            transition: all 0.4s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            transform: translateY(-2px);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: var(--color-text);
+        }
+
+        .card p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* === Code Block === */
+
+        pre {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            background: var(--color-code-bg);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            padding: calc(var(--space-unit) * 1.5);
+            margin: calc(var(--space-unit) * 1.5) 0;
+            overflow-x: auto;
+            transition: all 0.4s ease;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+            color: var(--color-accent);
+        }
+
+        pre code {
+            color: var(--color-text);
+        }
+
+        /* === Status Badge === */
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: var(--color-accent);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border-radius: 4px;
+            margin-bottom: calc(var(--space-unit) * 0.5);
+        }
+
+        /* === Footer === */
+
+        footer {
+            margin-top: calc(var(--space-unit) * 4);
+            padding-top: calc(var(--space-unit) * 2);
+            border-top: 1px solid var(--color-border);
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--color-text-muted);
+            transition: border-color 0.4s ease;
+        }
+
+        /* === Animations === */
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container > * {
+            animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+        }
+
+        .container > *:nth-child(1) { animation-delay: 0.05s; }
+        .container > *:nth-child(2) { animation-delay: 0.1s; }
+        .container > *:nth-child(3) { animation-delay: 0.15s; }
+        .container > *:nth-child(4) { animation-delay: 0.2s; }
+        .container > *:nth-child(5) { animation-delay: 0.25s; }
+        .container > *:nth-child(6) { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="site-title">Tiller Demo</div>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                <!-- Lucide Sun icon -->
+                <svg class="theme-toggle-icon sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4"/>
+                    <path d="M12 2v2"/>
+                    <path d="M12 20v2"/>
+                    <path d="m4.93 4.93 1.41 1.41"/>
+                    <path d="m17.66 17.66 1.41 1.41"/>
+                    <path d="M2 12h2"/>
+                    <path d="M20 12h2"/>
+                    <path d="m6.34 17.66-1.41 1.41"/>
+                    <path d="m19.07 4.93-1.41 1.41"/>
+                </svg>
+                <!-- Lucide Moon icon -->
+                <svg class="theme-toggle-icon moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                </svg>
+            </button>
+        </header>
+
+        <main>
+            <div class="badge">Example</div>
+            <h1>Dark Mode Implementation</h1>
+            <p>This standalone HTML file demonstrates a complete dark mode implementation with theme persistence. The design uses CSS variables for seamless theme switching and localStorage to remember your preference across sessions.</p>
+
+            <h2>How It Works</h2>
+            <p>The theme system detects your system preference on first visit using the <code>prefers-color-scheme</code> media query. When you toggle the theme, your choice is saved to localStorage and will persist on subsequent visits.</p>
+
+            <div class="card">
+                <h3>Key Features</h3>
+                <p><strong>System Preference Detection:</strong> Automatically matches your operating system's theme setting on first visit.</p>
+                <p><strong>Persistent Storage:</strong> Your theme choice is saved locally and restored on page reload.</p>
+                <p><strong>Smooth Transitions:</strong> All color changes animate smoothly using CSS transitions.</p>
+            </div>
+
+            <h2>Implementation</h2>
+            <p>The complete implementation uses CSS variables, local storage, and vanilla JavaScript. Here's the core theme-switching logic:</p>
+
+            <pre><code>function toggleTheme() {
+    const current = document.documentElement
+        .getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+
+    document.documentElement
+        .setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}</code></pre>
+
+            <h3>CSS Variables</h3>
+            <p>Theme colors are defined using CSS custom properties, allowing instant theme switching without JavaScript manipulation of individual styles:</p>
+
+            <pre><code>:root {
+    --color-bg: #fdfbf7;
+    --color-text: #1a1815;
+    --color-accent: #2563eb;
+}
+
+[data-theme="dark"] {
+    --color-bg: #0f1419;
+    --color-text: #e4e1db;
+    --color-accent: #5b9dff;
+}</code></pre>
+
+            <h2>Workflow Example</h2>
+            <p>This demo file was created as part of a tiller execution plan. The workflow demonstrates how tiller tracks implementation from planning through verification:</p>
+
+            <div class="card">
+                <h3>Tiller Workflow Steps</h3>
+                <p><code>tiller activate 01-01</code> – Start working on the plan</p>
+                <p><code>tiller verify 01-01 --pass</code> – Mark verification as passed</p>
+                <p><code>tiller complete 01-01</code> – Generate SUMMARY.md and finalize</p>
+            </div>
+
+            <p>Try toggling between light and dark modes using the button in the header. Your preference will be saved and restored when you refresh the page.</p>
+        </main>
+
+        <footer>
+            <p>Created with <a href="https://github.com/gulp/tiller" target="_blank">Tiller</a> – Multi-session workflow automation for Claude Code</p>
+        </footer>
+    </div>
+
+    <script>
+        // Theme management with system preference detection and localStorage persistence
+
+        function getSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        function getStoredTheme() {
+            return localStorage.getItem('theme');
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        }
+
+        // Initialize theme on page load
+        function initTheme() {
+            const storedTheme = getStoredTheme();
+            const initialTheme = storedTheme || getSystemTheme();
+            document.documentElement.setAttribute('data-theme', initialTheme);
+        }
+
+        // Run on page load
+        initTheme();
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            // Only auto-switch if user hasn't set a preference
+            if (!getStoredTheme()) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+    </script>
+</body>
+</html>

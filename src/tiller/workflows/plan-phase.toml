@@ -1,0 +1,238 @@
+# Plan Phase Workflow
+# Extracted from .claude/get-shit-done/workflows/plan-phase.md
+
+name = "plan-phase"
+version = "1.0.0"
+description = "Create executable phase prompts (PLAN.md files) optimized for parallel execution"
+initial_step = "load_project_state"
+terminal_steps = ["offer_next"]
+
+[steps.load_project_state]
+name = "Load Project State"
+description = """
+Read .planning/STATE.md and parse:
+- Current position (which phase we're planning)
+- Accumulated decisions (constraints on this phase)
+- Deferred issues (candidates for inclusion)
+- Blockers/concerns (things this phase may address)
+"""
+outputs = ["state_loaded", "current_phase", "decisions", "deferred_issues"]
+
+[[steps.load_project_state.next]]
+target = "load_codebase_context"
+
+[steps.load_codebase_context]
+name = "Load Codebase Context"
+description = """
+Check for codebase map in .planning/codebase/*.md
+Load relevant documents based on phase type (UI, API, database, etc.)
+Track extracted constraints for PLAN.md context section.
+"""
+outputs = ["codebase_context", "constraints"]
+
+[[steps.load_codebase_context.next]]
+target = "identify_phase"
+
+[steps.identify_phase]
+name = "Identify Phase"
+description = """
+Check roadmap and existing phases.
+If multiple phases available, ask which one to plan.
+Parse phase number (integer or decimal).
+Validate decimal phase requirements.
+Read any existing PLAN.md or DISCOVERY.md.
+"""
+outputs = ["phase_id", "phase_name", "existing_plans"]
+
+[[steps.identify_phase.next]]
+target = "mandatory_discovery"
+
+[steps.mandatory_discovery]
+name = "Mandatory Discovery"
+description = """
+Discovery is MANDATORY unless current context exists.
+
+Levels:
+- Level 0: Skip (pure internal work)
+- Level 1: Quick Verification (2-5 min)
+- Level 2: Standard Research (15-30 min)  
+- Level 3: Deep Dive (1+ hour)
+
+Route to discovery-phase.md if Level 2+.
+"""
+outputs = ["discovery_level", "discovery_complete"]
+
+[[steps.mandatory_discovery.next]]
+target = "read_project_history"
+
+[steps.read_project_history]
+name = "Read Project History"
+description = """
+Intelligent context assembly from frontmatter dependency graph:
+1. Scan all summary frontmatter
+2. Build dependency graph for current phase
+3. Select relevant summaries
+4. Extract context from frontmatter
+5. Read FULL summaries for selected phases
+
+Answer: What decisions constrain this phase? Deferred issues? Concerns?
+"""
+outputs = ["selected_summaries", "tech_stack", "patterns", "applicable_decisions"]
+
+[[steps.read_project_history.next]]
+target = "gather_phase_context"
+
+[steps.gather_phase_context]
+name = "Gather Phase Context"
+description = """
+Understand:
+- Phase goal (from roadmap)
+- What exists already
+- Dependencies met
+- Any RESEARCH.md, DISCOVERY.md, CONTEXT.md
+
+If RESEARCH.md exists, use standard_stack, architecture_patterns, etc.
+If CONTEXT.md exists, honor vision, prioritize essential.
+"""
+outputs = ["phase_goal", "existing_state", "research_context"]
+
+[[steps.gather_phase_context.next]]
+target = "break_into_tasks"
+
+[steps.break_into_tasks]
+name = "Break Into Tasks"
+description = """
+Decompose phase into tasks. Think dependencies first, not sequence.
+
+For each task, ask:
+1. What does this task NEED?
+2. What does this task CREATE?
+3. Can this run independently?
+
+Detect TDD candidates vs standard tasks.
+Identify checkpoints.
+"""
+outputs = ["tasks", "tdd_candidates", "checkpoints"]
+
+[[steps.break_into_tasks.next]]
+target = "build_dependency_graph"
+
+[steps.build_dependency_graph]
+name = "Build Dependency Graph"
+description = """
+Map task dependencies explicitly:
+1. Record needs/creates for each task
+2. Build the dependency graph
+3. Identify parallelization opportunities
+4. Detect and prefer vertical slices
+5. Output dependency map for each plan
+"""
+outputs = ["dependency_graph", "parallel_opportunities"]
+
+[[steps.build_dependency_graph.next]]
+target = "assign_waves"
+
+[steps.assign_waves]
+name = "Assign Waves"
+description = """
+Compute wave numbers before writing plans.
+
+Algorithm:
+- Empty depends_on = Wave 1
+- Otherwise: max(dep waves) + 1
+
+Store wave number with each plan.
+"""
+outputs = ["waves_assigned"]
+
+[[steps.assign_waves.next]]
+target = "group_into_plans"
+
+[steps.group_into_plans]
+name = "Group Into Plans"
+description = """
+Group tasks into plans based on dependency waves and autonomy.
+
+Rules:
+1. Same-wave tasks without file conflicts can be parallel
+2. Tasks with shared files must be sequential
+3. Checkpoint tasks mark plan as autonomous: false
+4. Each plan: 2-3 tasks max, single concern, ~50% context
+"""
+outputs = ["plans", "plan_groupings"]
+
+[[steps.group_into_plans.next]]
+target = "estimate_scope"
+
+[steps.estimate_scope]
+name = "Estimate Scope"
+description = """
+Verify each plan fits context budget.
+
+Check depth setting (quick/standard/comprehensive).
+ALWAYS split if: >3 tasks, multiple subsystems, >5 files, complex domains.
+Each plan must be: 2-3 tasks max, ~50% context target, independently committable.
+"""
+outputs = ["scope_verified", "needs_splitting"]
+
+[[steps.estimate_scope.next]]
+target = "confirm_breakdown"
+condition = "not(exists(needs_splitting))"
+label = "Scope OK"
+
+[[steps.estimate_scope.next]]
+target = "break_into_tasks"
+condition = "exists(needs_splitting)"
+label = "Needs re-splitting"
+
+[steps.confirm_breakdown]
+name = "Confirm Breakdown"
+description = """
+Present breakdown with wave structure.
+In YOLO mode: auto-approve.
+In interactive mode: wait for user confirmation.
+"""
+outputs = ["breakdown_confirmed"]
+
+[[steps.confirm_breakdown.next]]
+target = "write_phase_prompt"
+
+[steps.write_phase_prompt]
+name = "Write Phase Prompt"
+description = """
+Use template from .claude/get-shit-done/templates/phase-prompt.md.
+
+Write to .planning/phases/XX-name/{phase}-NN-PLAN.md
+
+Each plan follows template structure with:
+- Frontmatter (phase, plan, type, depends_on, files_modified, autonomous)
+- Objective, Execution context, Context, Tasks
+- Verification, Success criteria, Output
+"""
+outputs = ["plans_written"]
+
+[[steps.write_phase_prompt.next]]
+target = "git_commit"
+
+[steps.git_commit]
+name = "Git Commit"
+description = """
+Stage and commit phase plan(s):
+git add .planning/phases/${PHASE}-*/${PHASE}-*-PLAN.md
+git commit -m "docs(${PHASE}): create phase plan"
+"""
+outputs = ["commit_complete"]
+
+[[steps.git_commit.next]]
+target = "offer_next"
+
+[steps.offer_next]
+name = "Offer Next Steps"
+description = """
+Phase planning complete. Show:
+- Wave structure summary
+- Import to beads instructions (PTB)
+- bd ready command
+- Available options (preview, show epic, adjust)
+"""
+outputs = ["phase_complete"]

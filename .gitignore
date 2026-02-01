@@ -1,0 +1,27 @@
+# Build output
+dist/
+
+# Dependencies
+node_modules/
+
+# Tiller runtime state (created by `tiller setup`)
+.tiller/runs/
+.tiller/events.jsonl
+.tiller/agents/
+.tiller/hands/
+.tiller/mates/
+.tiller/mates.json*
+.tiller/PRIME.local.md
+.tiller/.migration-snapshot.json
+
+# Claude Code local files
+.claude/settings.local.json
+.claude/current-session
+CLAUDE.local.md
+
+# Local config
+.envrc
+.mcp.json
+
+# Lockfiles (using bun)
+package-lock.json

@@ -1,0 +1,38 @@
+{
+  "name": "tiller-plugins",
+  "owner": {
+    "name": "tiller-plugins",
+    "email": ""
+  },
+  "metadata": {
+    "description": "Tiller - Workflow tracking and planning tools for Claude Code",
+    "version": "0.1.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "beads-statusline",
+      "source": "./plugins/beads-statusline",
+      "description": "Show current in_progress beads task in Claude Code statusline.",
+      "version": "0.1.0",
+      "keywords": ["beads", "statusline", "task-tracking"],
+      "category": "productivity"
+    },
+    {
+      "name": "tiller",
+      "source": "./plugins/tiller",
+      "description": "Intent state tracking for multi-session work.",
+      "version": "0.2.0",
+      "keywords": ["tiller", "workflow", "tracking", "planning", "execution"],
+      "category": "productivity"
+    },
+    {
+      "name": "ahoy",
+      "source": "./plugins/ahoy",
+      "description": "Intent shaping CLI for multi-initiative planning.",
+      "version": "0.1.0",
+      "keywords": ["ahoy", "planning", "specs", "drafts", "initiatives"],
+      "category": "productivity"
+    }
+  ]
+}

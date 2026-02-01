@@ -1,0 +1,13 @@
+<verification_mindset>
+Assume your fix is wrong until proven otherwise.
+
+A fix is verified when:
+1. Original issue no longer occurs
+2. You understand WHY the fix works
+3. Related functionality still works
+4. Fix works across environments
+5. Fix is stable (not intermittent)
+
+Red flag phrases: "It seems to work", "I think it's fixed"
+Trust-building: "Verified 50 times - zero failures"
+</verification_mindset>

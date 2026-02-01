@@ -1,0 +1,28 @@
+{
+  "name": "ahoy",
+  "version": "0.1.0",
+  "description": "Intent shaping CLI for multi-initiative planning",
+  "keywords": ["planning", "specs", "drafts", "initiatives"],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ahoy prime"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ahoy prime"
+          }
+        ]
+      }
+    ]
+  }
+}

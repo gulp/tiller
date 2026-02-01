@@ -1,0 +1,13 @@
+# Tiller state (cached data, not source of truth)
+.tiller/tracks/
+.tiller/events.jsonl
+.tiller/agents/
+.tiller/hands/
+.tiller/mates/
+.tiller/mates.json*
+.tiller/PRIME.local.md
+
+# Keep these in git (source of truth):
+# .tiller/tiller.toml (project config)
+# .tiller/PRIME.md (workflow settings)
+# .tiller/runs.jsonl (execution state)

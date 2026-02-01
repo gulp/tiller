@@ -1,0 +1,353 @@
+# Execute Plan Workflow
+# Extracted from .claude/get-shit-done/workflows/execute-plan.md
+
+name = "execute-plan"
+version = "1.0.0"
+description = "Execute a phase prompt (PLAN.md) and create the outcome summary (SUMMARY.md)"
+initial_step = "load_project_state"
+terminal_steps = ["offer_next"]
+
+[steps.load_project_state]
+name = "Load Project State"
+description = """
+Read .planning/STATE.md and parse:
+- Current position (phase, plan, status)
+- Accumulated decisions (constraints on this execution)
+- Deferred issues (context for deviations)
+- Blockers/concerns (things to watch for)
+
+If STATE.md missing but .planning/ exists: offer reconstruct or continue.
+If .planning/ doesn't exist: Error - project not initialized.
+"""
+outputs = ["state_loaded", "decisions", "deferred_issues", "blockers"]
+
+[[steps.load_project_state.next]]
+target = "identify_plan"
+
+[steps.identify_plan]
+name = "Identify Plan"
+description = """
+Find the next plan to execute:
+- Check roadmap for "In progress" phase
+- Find plans in that phase directory
+- Identify first plan without corresponding SUMMARY
+
+Logic: Find first PLAN.md file without matching SUMMARY.md
+"""
+outputs = ["plan_path", "phase_dir", "plan_number"]
+
+[[steps.identify_plan.next]]
+target = "record_start_time"
+
+[steps.record_start_time]
+name = "Record Start Time"
+description = """
+Record execution start time for performance tracking.
+Store in shell variables for duration calculation.
+"""
+outputs = ["start_time", "start_epoch"]
+
+[[steps.record_start_time.next]]
+target = "parse_segments"
+
+[steps.parse_segments]
+name = "Parse Segments"
+description = """
+Intelligent segmentation: Parse plan into execution segments.
+
+Check for checkpoints in plan.
+Determine execution pattern:
+- Pattern A: No checkpoints - fully autonomous (subagent for entire plan)
+- Pattern B: Has verify-only checkpoints - segmented execution
+- Pattern C: Has decision/human-action checkpoints - main context only
+"""
+outputs = ["execution_pattern", "segments", "has_checkpoints"]
+
+[[steps.parse_segments.next]]
+target = "init_agent_tracking"
+condition = "or(eq(execution_pattern, 'A'), eq(execution_pattern, 'B'))"
+label = "Needs subagents"
+
+[[steps.parse_segments.next]]
+target = "load_prompt"
+condition = "eq(execution_pattern, 'C')"
+label = "Main context only"
+
+[steps.init_agent_tracking]
+name = "Initialize Agent Tracking"
+description = """
+Initialize agent tracking for subagent resume capability:
+1. Create/verify agent-history.json
+2. Check for interrupted agents
+3. Prune old entries
+"""
+outputs = ["tracking_initialized", "interrupted_agent_id"]
+
+[[steps.init_agent_tracking.next]]
+target = "segment_execution"
+condition = "eq(execution_pattern, 'B')"
+label = "Segmented execution"
+
+[[steps.init_agent_tracking.next]]
+target = "autonomous_execution"
+condition = "eq(execution_pattern, 'A')"
+label = "Fully autonomous"
+
+[steps.autonomous_execution]
+name = "Autonomous Execution"
+description = """
+Pattern A: Spawn single subagent for entire plan.
+Subagent gets fresh 200k context, executes all tasks, creates SUMMARY, commits.
+Main context: Just orchestration (~5% usage).
+"""
+outputs = ["agent_id", "agent_result"]
+
+[[steps.autonomous_execution.next]]
+target = "record_completion_time"
+
+[steps.segment_execution]
+name = "Segment Execution"
+description = """
+Pattern B: Execute segment by segment.
+
+For each autonomous segment:
+  Spawn subagent with task subset
+
+For each checkpoint:
+  Execute in main context
+  Wait for user interaction
+
+After all segments:
+  Aggregate results
+  Create SUMMARY.md
+  Commit
+"""
+outputs = ["segment_results", "aggregated_files", "aggregated_deviations"]
+
+[[steps.segment_execution.next]]
+target = "record_completion_time"
+
+[steps.load_prompt]
+name = "Load Prompt"
+description = """
+Read the plan prompt file.
+This IS the execution instructions - follow exactly.
+If plan references CONTEXT.md, honor it throughout.
+"""
+outputs = ["plan_loaded", "context_files"]
+
+[[steps.load_prompt.next]]
+target = "previous_phase_check"
+
+[steps.previous_phase_check]
+name = "Previous Phase Check"
+description = """
+Check if previous phase had issues.
+If "Issues Encountered" != "None" or "Next Phase Readiness" has blockers:
+  Ask user how to proceed (proceed anyway, address first, review previous)
+"""
+outputs = ["previous_issues_checked"]
+
+[[steps.previous_phase_check.next]]
+target = "execute"
+
+[steps.execute]
+name = "Execute Tasks"
+description = """
+Execute each task in the prompt.
+Deviations are normal - handle automatically.
+
+For type="auto":
+- Check tdd attribute (TDD flow vs standard)
+- Handle authentication errors as gates
+- Apply deviation rules automatically
+- Run verification, confirm done criteria
+- Commit the task
+
+For type="checkpoint:*":
+- STOP immediately
+- Execute checkpoint_protocol
+- Wait for user response
+"""
+outputs = ["tasks_completed", "deviations", "task_commits"]
+
+[[steps.execute.next]]
+target = "checkpoint_protocol"
+condition = "exists(checkpoint_hit)"
+label = "Checkpoint reached"
+
+[[steps.execute.next]]
+target = "verification_failure_gate"
+condition = "exists(verification_failed)"
+label = "Verification failed"
+
+[[steps.execute.next]]
+target = "record_completion_time"
+label = "All tasks complete"
+
+[steps.checkpoint_protocol]
+name = "Checkpoint Protocol"
+description = """
+Display checkpoint clearly with appropriate format:
+- human-verify: Show what was automated, verification steps
+- decision: Present options with pros/cons
+- human-action: Provide instructions for unavoidable manual step
+
+WAIT for user response. Do NOT hallucinate completion.
+"""
+outputs = ["checkpoint_response"]
+
+[[steps.checkpoint_protocol.next]]
+target = "execute"
+label = "Resume after checkpoint"
+
+[steps.verification_failure_gate]
+name = "Verification Failure Gate"
+description = """
+Verification failed for a task.
+STOP. Present options: Retry, Skip, Stop.
+If Skip: note in SUMMARY under "Issues Encountered".
+"""
+outputs = ["failure_resolution"]
+
+[[steps.verification_failure_gate.next]]
+target = "execute"
+condition = "eq(failure_resolution, 'retry')"
+label = "Retry task"
+
+[[steps.verification_failure_gate.next]]
+target = "execute"
+condition = "eq(failure_resolution, 'skip')"
+label = "Skip and continue"
+
+[[steps.verification_failure_gate.next]]
+target = "record_completion_time"
+condition = "eq(failure_resolution, 'stop')"
+label = "Stop execution"
+
+[steps.record_completion_time]
+name = "Record Completion Time"
+description = """
+Record execution end time and calculate duration.
+Pass timing data to SUMMARY.md creation.
+"""
+outputs = ["end_time", "duration"]
+
+[[steps.record_completion_time.next]]
+target = "create_summary"
+
+[steps.create_summary]
+name = "Create Summary"
+description = """
+Create {phase}-{plan}-SUMMARY.md using template.
+Populate frontmatter, title, accomplishments.
+Include performance data and deviations.
+"""
+outputs = ["summary_path"]
+
+[[steps.create_summary.next]]
+target = "update_current_position"
+
+[steps.update_current_position]
+name = "Update Current Position"
+description = """
+Update Current Position section in STATE.md.
+Calculate and render progress bar.
+"""
+outputs = ["position_updated"]
+
+[[steps.update_current_position.next]]
+target = "extract_decisions_and_issues"
+
+[steps.extract_decisions_and_issues]
+name = "Extract Decisions and Issues"
+description = """
+Extract decisions, issues, and concerns from SUMMARY.md into STATE.md.
+Update Decisions table, Deferred Issues, Blockers/Concerns.
+"""
+outputs = ["state_enriched"]
+
+[[steps.extract_decisions_and_issues.next]]
+target = "update_session_continuity"
+
+[steps.update_session_continuity]
+name = "Update Session Continuity"
+description = """
+Update Session Continuity section in STATE.md.
+Enable resumption in future sessions.
+"""
+outputs = ["session_updated"]
+
+[[steps.update_session_continuity.next]]
+target = "issues_review_gate"
+
+[steps.issues_review_gate]
+name = "Issues Review Gate"
+description = """
+If "Issues Encountered" is not "None":
+- YOLO mode: auto-approve and continue
+- Interactive: present issues and wait for acknowledgment
+"""
+outputs = ["issues_acknowledged"]
+
+[[steps.issues_review_gate.next]]
+target = "update_roadmap"
+
+[steps.update_roadmap]
+name = "Update Roadmap"
+description = """
+Update roadmap file.
+If more plans remain: update plan count.
+If last plan: mark phase complete with date.
+"""
+outputs = ["roadmap_updated"]
+
+[[steps.update_roadmap.next]]
+target = "git_commit_metadata"
+
+[steps.git_commit_metadata]
+name = "Git Commit Metadata"
+description = """
+Commit execution metadata (SUMMARY + STATE + ROADMAP).
+Note: Task code already committed during execution.
+"""
+outputs = ["metadata_commit"]
+
+[[steps.git_commit_metadata.next]]
+target = "update_codebase_map"
+
+[steps.update_codebase_map]
+name = "Update Codebase Map"
+description = """
+If .planning/codebase/ exists:
+Check what changed across all task commits.
+Update only if structural changes occurred.
+Skip if only code changes within existing files.
+"""
+outputs = ["codebase_map_updated"]
+
+[[steps.update_codebase_map.next]]
+target = "check_phase_issues"
+
+[steps.check_phase_issues]
+name = "Check Phase Issues"
+description = """
+Check if issues were created during this phase.
+Offer to review with /gsd:consider-issues.
+In YOLO mode: note and continue automatically.
+"""
+outputs = ["phase_issues_checked"]
+
+[[steps.check_phase_issues.next]]
+target = "offer_next"
+
+[steps.offer_next]
+name = "Offer Next Steps"
+description = """
+Verify remaining work before presenting next steps.
+
+Route A: More plans remain in phase - show next plan command
+Route B: Phase complete, more phases remain - show plan-phase command
+Route C: Milestone complete - show complete-milestone command
+"""
+outputs = ["next_step_offered"]

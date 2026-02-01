@@ -1,0 +1,13 @@
+<test_integrity>
+Tests verify behavior. If tests fail:
+1. Code is broken → fix the code
+2. Test setup is broken → fix the setup
+3. Test is wrong → fix the test
+
+NEVER:
+- Remove tests because they're "too complex"
+- "Simplify" tests by removing assertions that fail
+- Skip tests that require state persistence (that IS the feature)
+
+If a test is hard to make pass, that's signal—not noise.
+</test_integrity>

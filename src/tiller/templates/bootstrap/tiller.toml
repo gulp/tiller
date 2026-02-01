@@ -1,0 +1,24 @@
+version = "0.2.0"
+
+[paths]
+plans = "plans"
+specs = "specs"
+todos = "plans/todos"
+# default_initiative = "main"  # Optional: fallback when no explicit focus set
+                               # Uncomment if you work primarily in one initiative
+                               # Better: use `tiller focus <initiative>` per session
+
+[sync]
+auto_sync_on_status = true
+
+[workflow]
+confirmation_prompts = false   # false = commands execute immediately
+                               # true = commands return TOON for confirmation
+                               # Override per-command with --confirm or --no-confirm
+
+# NOTE: require_summary not yet read from config (planned in 11-07)
+# Currently set in PRIME.md with frontmatter:
+#   require-summary: true|false
+require_summary = true         # Will be used once 11-07 is complete
+
+working_initiative = "example-init"  # Set via `tiller focus <initiative>`
