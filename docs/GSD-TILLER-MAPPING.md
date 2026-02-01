@@ -35,18 +35,18 @@
 │           │                     │                               │       │
 │           │                     │ tiller import                 │       │
 │           ▼                     ▼                               │       │
-│  ┌─────────────────┐     ┌─────────────┐     ┌──────────────┐  │       │
-│  │    ptb/init     │────>│    ready    │────>│ BD issues    │  │       │
-│  └────────┬────────┘     └──────┬──────┘     │ created      │  │       │
-│           │                     │             │ with deps    │  │       │
-│           │                     │ tiller      └──────────────┘  │       │
+│  ┌─────────────────┐     ┌─────────────┐     ┌──────────────┐   │       │
+│  │    ptb/init     │────>│    ready    │────>│ BD issues    │   │       │
+│  └────────┬────────┘     └──────┬──────┘     │ created      │   │       │
+│           │                     │            │ with deps    │   │       │
+│           │                     │ tiller     └──────────────┘   │       │
 │           │                     │ activate                      │       │
 │           ▼                     ▼                               │       │
-│  ┌─────────────────┐     ┌─────────────┐     ┌──────────────┐  │       │
-│  │  execute-plan   │────>│   active    │<───>│ bd ready     │  │       │
-│  │  execute-phase  │     └──────┬──────┘     │ bd show      │  │       │
-│  └────────┬────────┘            │             │ bd close     │  │       │
-│           │                     │             └──────────────┘  │       │
+│  ┌─────────────────┐     ┌─────────────┐     ┌──────────────┐   │       │
+│  │  execute-plan   │────>│   active    │<───>│ bd ready     │   │       │
+│  │  execute-phase  │     └──────┬──────┘     │ bd show      │   │       │
+│  └────────┬────────┘            │            │ bd close     │   │       │
+│           │                     │            └──────────────┘   │       │
 │           │ (pause)             │ tiller pause                  │       │
 │           ▼                     ▼                               │       │
 │  ┌─────────────────┐     ┌─────────────┐                        │       │
@@ -102,7 +102,7 @@
 |-------------|--------------|----------------|-----------|
 | `/gsd:plan-phase N` | → `proposed` | `tiller init` | None |
 | (human review) | `proposed` → `approved` | `tiller approve` | None |
-| `ptb <plan>` | `approved` → `ready` | `tiller import` | `bd create` + deps |
+| `ptb <plan>` | `approved` → `ready` | `tiller import` *(deprecated)* | `bd create` + deps |
 
 **New flow with Tiller:**
 ```bash
@@ -190,8 +190,8 @@ tiller rework track-abc
 
 | GSD Command | Tiller Equivalent | Description |
 |-------------|-------------------|-------------|
-| `/gsd:execute-phase N` | `tiller activate-phase N` | Activates all ready tracks in phase |
-| `/gsd:progress` | `tiller status` | Shows phase/track progress |
+| `/gsd:execute-phase N` | *(not implemented)* | `activate-phase` was planned but not built. Use sequential `tiller start` per plan. |
+| `/gsd:progress` | `tiller status` | Shows phase/run progress |
 
 **Phase execution with Tiller:**
 ```bash

@@ -2,6 +2,18 @@
 
 Enhanced SUMMARY.md format for MQ-queryable, human-readable, and verifiable documentation.
 
+## File Naming States
+
+SUMMARY files progress through three naming states:
+
+| File | State | Meaning |
+|------|-------|---------|
+| `SUMMARY.md` | Draft | Generated but not yet verified |
+| `SUMMARY.autopass.md` | Auto-passed | Verification auto-passed (no UAT checks defined) |
+| `SUMMARY.done.md` | Finalized | Verification passed and run completed |
+
+The `tiller complete` command renames `SUMMARY.md` → `SUMMARY.done.md` (or `SUMMARY.autopass.md` if auto-passed).
+
 ## Purpose
 
 SUMMARY.md files serve as:
@@ -50,12 +62,17 @@ baseline_commit: <git-hash>
 
 ### Frontmatter (YAML)
 
-| Field | Description | Example |
-|-------|-------------|---------|
-| `epic_id` | Beads epic ID for this plan | `tiller-xyz` |
-| `phase` | Phase number | `02.1` |
-| `plan` | Plan number within phase | `05` |
-| `baseline_commit` | Git commit when plan started | `abc1234` |
+| Field | Required | Description | Example |
+|-------|----------|-------------|---------|
+| `title` | **Yes** | Plan title (from PLAN.md frontmatter) | `Agent Observability` |
+| `epic_id` | No | Beads epic ID for this plan | `tiller-xyz` |
+| `phase` | No | Phase number | `02.1` |
+| `plan` | No | Plan number within phase | `05` |
+| `completed` | No | Completion timestamp | `2026-01-20T12:00:00Z` |
+| `tasks_completed` | No | Count of completed tasks | `6` |
+
+> **Note:** `baseline_commit` is documented here for future use but is not
+> currently generated. Commits are extracted via `git log --since=<run_created_at>`.
 
 ### Objective
 
@@ -74,7 +91,7 @@ List of files created/modified with their purpose:
 
 Numbered list of completed tasks with outcomes:
 - Format: `<number>. <title> - <outcome>`
-- Source: Beads epic children with close_reasons
+- Source: `beads_snapshot` field from run (if available), otherwise PLAN.md tasks
 - Outcomes should describe what was achieved, not just "done"
 
 ### Verification
@@ -90,7 +107,7 @@ Results of automated and manual checks:
 Git commits made during plan execution:
 - Short hash (7 chars) in backticks
 - Commit message (first line only)
-- Source: `git log --oneline <baseline>..HEAD`
+- Source: `git log --oneline --since=<run_created_at>` filtered by `files_modified` paths
 
 ### Notes
 
@@ -196,12 +213,12 @@ Enable humans to observe multiple Claude agents working on different tracks from
 
 ## Generation Sources
 
-| Section | Source |
+| Section | Actual Source |
 |---------|--------|
-| Frontmatter | PLAN.md frontmatter + git rev-parse HEAD at import |
-| Objective | PLAN.md `<objective>` section |
+| Frontmatter | PLAN.md frontmatter (`title` required) |
+| Objective | PLAN.md `objective` frontmatter or first `## Objective` section |
 | Deliverables | PLAN.md `files_modified` frontmatter |
-| Tasks | Beads epic children with close_reasons |
-| Verification | run.verification.automated + run.verification.uat |
-| Commits | `git log --oneline <baseline>..HEAD` |
-| Notes | Task close_reasons (aggregated) |
+| Tasks | `beads_snapshot` from run, falling back to PLAN.md tasks |
+| Verification | `run.verification` events (event-sourced) |
+| Commits | `git log --oneline --since=<created_at>` filtered by `files_modified` |
+| Notes | Currently empty (manual additions only) |

@@ -11,8 +11,13 @@
 
 - TOON output uses `run:` key (not `track:`)
 - 1:1 mapping: one plan = one run (implicitly)
-- Internal JSON files retain `track-*.json` naming and `id` field
 - No separate `run_id` generation
+
+> [!NOTE]
+> **Implementation note:** File naming has already migrated to `run-*.json` in
+> `.tiller/runs/` (ahead of Phase 2). Internal variable names and event types
+> (`track_created`, `track_claimed`, `track_released`) still use "track"
+> terminology — a cleanup pass is pending.
 
 **Rationale:** Simpler implementation. The 1:1 constraint holds for current workflows.
 Renaming internal JSON fields provides no user-visible benefit until multi-run is needed.

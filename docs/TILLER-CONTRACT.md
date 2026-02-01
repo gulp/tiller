@@ -1,8 +1,19 @@
 # Tiller Contract Specification
 
+> [!CAUTION]
+> **This document has significant drift from the implementation.** Key issues:
+> - Directory structure uses `plans/{initiative}/` not `specs/{initiative}/phases/` for execution
+> - Configuration is `tiller.toml` (TOML), not `config.json`
+> - PLAN.md validation described here is not implemented; `tiller init` does basic checks only
+> - Many commands are undocumented here (40+ commands exist vs ~10 documented)
+> - State machine is HSM with slash notation — see `src/tiller/types/index.ts`
+> - `tiller start` (collapsed init+activate) is the primary command, not mentioned here
+>
+> **Source of truth:** `tiller --help`, `src/tiller/commands/`, `src/tiller/types/index.ts`
+
 **Version:** 0.2.0-draft
 **Date:** 2026-01-15
-**Status:** Design Phase
+**Status:** Design Phase (partially implemented)
 
 ## Overview
 
@@ -54,7 +65,7 @@ specs/                              # Human-first, git-tracked
     └── ARCHITECTURE.md
 
 .tiller/                            # Machine-first, tiller exclusive
-├── config.json                    # Tiller configuration
+├── tiller.toml                    # Tiller configuration (TOML, see ADR-0009)
 ├── runs/                          # Run state (all initiatives)
 │   ├── tiller--04-01.json
 │   ├── tiller--04-02.json
@@ -506,7 +517,7 @@ The gsd-bd plugin (GSD↔beads bridge) was absorbed into tiller during Phase 3. 
 2. **tiller never creates PLAN.md or initiatives**
 3. **STATE.md sections have single writers**
 4. **PLAN.md is the API**
-5. **Track IDs include initiative prefix**
+5. **Run IDs include initiative prefix** (see ADR-0004)
 6. **No runtime coupling (no imports, no IPC)**
 7. **Each initiative is isolated in specs/, unified in .tiller/**
 

@@ -1,9 +1,16 @@
 # Tiller Design Specification
 
 > [!CAUTION]
-> **This document is outdated.** It uses "track" terminology (now "run" per ADR-0004)
-> and describes an obsolete state machine. See `src/tiller/types/index.ts` for current
-> states: `proposed → approved → ready → active/* → verifying/* → complete`
+> **This document is substantially outdated.** It was written during Tiller's early design
+> and has not been updated to reflect the implemented system. Key drifts:
+> - Uses "track" terminology (now "run" per ADR-0004)
+> - Shows flat state machine (actual: HSM with slash notation — `active/executing`, `verifying/passed`)
+> - Documents ~15 commands (actual: 40+)
+> - Shows JSON config (actual: TOML via `tiller.toml` per ADR-0009)
+> - Shows `.tiller/tracks/` paths (actual: `.tiller/runs/`)
+>
+> **Source of truth:** `src/tiller/types/index.ts` for states, `src/tiller/commands/` for CLI.
+> States: `proposed → approved → ready → active/* → verifying/* → complete`
 
 A CLI system for managing intent over time with a human firmly at the tiller.
 

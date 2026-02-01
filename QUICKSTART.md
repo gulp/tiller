@@ -31,7 +31,7 @@ tiller doctor
 
 ```bash
 cd your-project
-tiller setup      # creates .tiller/ and plans/ structure
+tiller setup bootstrap   # creates .tiller/ and plans/ structure
 ```
 
 This creates the scaffolding tiller needs to track work.
@@ -42,10 +42,10 @@ This creates the scaffolding tiller needs to track work.
 tiller plan create "Add user authentication"
 # Creates plans/{initiative}/{phase}/01-01-PLAN.md
 
-tiller activate 01-01       # Start work
+tiller start 01-01           # Init + activate in one step
 # ... implement the feature ...
-tiller verify 01-01 --pass  # Mark verified
-tiller complete 01-01       # Finalize with SUMMARY.md
+tiller verify 01-01 --pass   # Mark verified
+tiller complete 01-01        # Finalize with SUMMARY.md
 ```
 
 ## Sample Claude Code conversation
@@ -72,7 +72,8 @@ Claude: "Generated SUMMARY.md. Feature complete!"
 ```bash
 tiller status              # Current state + next action
 tiller plan create "obj"   # Create new plan
-tiller activate <ref>      # Start work on a plan
+tiller start <ref>         # Init + activate in one step
+tiller activate <ref>      # Start work on an existing run
 tiller pause <ref>         # Pause with handoff context
 tiller resume <ref>        # Resume paused work
 tiller verify <ref> --pass # Mark verification passed

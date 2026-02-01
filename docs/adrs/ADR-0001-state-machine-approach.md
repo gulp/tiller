@@ -101,29 +101,29 @@ Investigation confirmed XState DOES support dynamic definitions:
 
 ## Decision
 
-**Accepted: Option A (XState)**
+**Accepted: Option B (Custom TypeScript)**
 
-Rationale:
-1. Dynamic workflow support confirmed
-2. Large ecosystem reduces long-term maintenance
-3. Visualization aids debugging/documentation
-4. Type safety with industry-standard patterns
+> [!NOTE]
+> This ADR originally recorded Option A (XState) as the decision. During
+> implementation, Option B was chosen instead — zero dependencies, simpler
+> mental model, and the HSM complexity stayed manageable. The codebase uses
+> a hand-rolled `VALID_TRANSITIONS` table with slash-notation states
+> (`active/executing`, `verifying/passed`) defined in `src/tiller/types/index.ts`.
 
-Alternative: **Option C** if minimal investment preferred and XState learning curve deemed too high.
+Rationale (updated to reflect actual implementation):
+1. Zero dependencies — no XState, no sub-deps
+2. Full type safety via `RunState` union type with template literals
+3. HSM expressed naturally with slash notation (`active/executing`, `verifying/passed`)
+4. `VALID_TRANSITIONS` table is the single source of truth for all state transitions
+5. `canTransition()` handles both exact and parent-level matching
 
 ## Consequences
 
-### If XState chosen:
-- Medium refactor effort (2-3 sessions)
-- New dependency (zero sub-deps)
-- Gain: visualization, ecosystem, type safety
-- Workflows can be stored as JSON for future plugin support
-
-### If Custom/YAML chosen:
-- Lower initial effort
-- No new dependencies
-- Must build workflow loader/validator from scratch
-- Less ecosystem support long-term
+- Zero new dependencies
+- State machine is a simple lookup table (~35 lines) in `types/index.ts`
+- No visualization tooling (trade-off accepted; mermaid diagrams serve this need)
+- Adding states or transitions is a one-line table edit
+- Dynamic/pluggable workflows remain a future option via YAML (Option C)
 
 ## References
 

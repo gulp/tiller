@@ -1,6 +1,6 @@
 # ADR-0003: TOON-First CLI Output
 
-**Status:** Proposed
+**Status:** Accepted (partially implemented)
 **Date:** 2026-01-16
 **Decision Makers:** @gulp
 

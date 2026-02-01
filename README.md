@@ -122,37 +122,31 @@ See [ADR-0005: Demand vs Supply](docs/adrs/ADR-0005-demand-vs-supply.md) for the
 ```
 You: "I want to add dark mode to my app"
 
-Claude: "Let me help you implement dark mode. First, I'll use
-EnterPlanMode to create an implementation plan..."
+Claude: "Let me create a plan for dark mode..."
+       [Claude creates plans/myapp/01/01-01-PLAN.md]
 
-[Claude creates PLAN.md with phases]
+You: "tiller start 01-01"
 
-You: "tiller init plans/dark-mode-PLAN.md"
+Claude: "Run created in active/executing. Working on dark mode..."
+       [Claude implements the feature]
+       "Work complete. Ready for verification."
 
-Claude: "Created run-abc123 in 'proposed' state. Use
-'tiller approve abc123' to begin."
+You: "tiller verify 01-01 --pass"
+You: "tiller complete 01-01"
 
-You: "tiller approve abc123"
-You: "tiller activate abc123"
-
-Claude: "Starting execution... [implements dark mode]"
-Claude: "Entering verification phase. Run 'tiller verify abc123'
-when you've tested the changes."
-
-You: "tiller verify abc123 --pass"
-
-Claude: "✓ Verification passed. Run 'tiller complete abc123'
-to finish."
+Claude: "Generated SUMMARY.md. Feature complete!"
 ```
 
 **How it works:**
 
 1. **Planning** - Claude creates PLAN.md files with objectives and tasks
-2. **Initialization** - `tiller init` creates a run (state tracking)
-3. **Execution** - `tiller activate` transitions to active/executing
-4. **Verification** - `tiller verify` captures UAT results (pass/fail)
+2. **Start** - `tiller start` collapses init + approve + activate into one step (creates run in `active/executing`)
+3. **Execution** - Agent works on the plan, state tracked in `.tiller/runs/`
+4. **Verification** - `tiller verify --pass` or `--fail` captures UAT results
 5. **Completion** - `tiller complete` finalizes and generates SUMMARY.md
 6. **Persistence** - State survives context resets via `.tiller/runs.jsonl`
+
+> **Granular workflow:** For more control, use individual commands: `tiller init` (→ ready) → `tiller activate` (→ active/executing) → `tiller verify` → `tiller complete`. See [TILLER-DESIGN.md](docs/TILLER-DESIGN.md).
 
 For detailed workflow patterns and state machine behavior, see [TILLER-DESIGN.md](docs/TILLER-DESIGN.md).
 
@@ -207,8 +201,8 @@ tiller initiative list     # Show all initiatives
 tiller status              # Show current state and next actions (respects focus)
 
 # Run lifecycle (HSM state machine)
-tiller init <plan>         # Create run from PLAN.md (→ proposed)
-tiller approve <ref>       # Approve for execution (proposed → approved)
+tiller start <ref>         # Collapsed: init + approve + activate (→ active/executing)
+tiller init <plan>         # Create run from PLAN.md (→ ready)
 tiller activate <ref>      # Start execution (ready → active/executing)
 tiller pause <ref>         # Pause active work (→ active/paused)
 tiller resume <ref>        # Resume paused work (→ active/executing)
@@ -239,35 +233,40 @@ For complete architecture documentation, see [TILLER-DESIGN.md](docs/TILLER-DESI
 stateDiagram-v2
     [*] --> proposed: tiller init
     proposed --> approved: tiller approve
-    approved --> ready: tiller import
-    ready --> active: tiller activate
+    approved --> ready
+    ready --> active: tiller start / activate
 
     state active {
         [*] --> executing
         executing --> paused: tiller pause
         paused --> executing: tiller resume
+        executing --> checkpoint: agent checkpoint
+        checkpoint --> executing: resolved
     }
 
-    active --> verifying: work complete
+    active --> verifying: tiller verify
 
     state verifying {
         [*] --> testing
-        testing --> passed: tiller verify --pass
-        testing --> failed: tiller verify --fail
+        testing --> passed: --pass
+        testing --> failed: --fail
         failed --> fixing: create FIX-PLAN
         fixing --> retesting: fixes complete
-        retesting --> passed: verification passes
+        retesting --> passed: passes
         retesting --> failed: still failing
     }
 
     verifying --> active: tiller rework
     verifying --> complete: tiller complete
+    complete --> active: tiller rework
     complete --> [*]
 
     active --> abandoned: tiller abandon
     verifying --> abandoned: tiller abandon
     abandoned --> [*]
 ```
+
+> **Shortcut:** `tiller start 01-01` collapses `init → approve → activate` into one command.
 
 See [docs/TILLER-DESIGN.md](docs/TILLER-DESIGN.md) for details.
 
